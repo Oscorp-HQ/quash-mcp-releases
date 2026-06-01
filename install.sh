@@ -85,6 +85,7 @@ register_mcp_config() {
   local entry
   entry="$(cat <<JSON
 {
+  "type": "stdio",
   "command": "${BIN_DIR}/quash-mcp",
   "env": {
     "QUASH_SIDECAR_CMD": "${BIN_DIR}/quash-sidecar"
@@ -138,6 +139,9 @@ main() {
   # Register in known MCP clients
   info "Registering MCP clients ..."
 
+  # Claude Code (user-level, works in any project)
+  register_mcp_config "$HOME/.claude.json"
+
   # Claude Desktop (macOS)
   register_mcp_config "$HOME/Library/Application Support/Claude/claude_desktop_config.json"
 
@@ -151,7 +155,7 @@ main() {
   success "Quash MCP installed to $BIN_DIR"
   echo ""
   echo "  Next steps:"
-  echo "  1. Restart your MCP client (Claude Desktop / Cursor)."
+  echo "  1. Restart your MCP client (Claude Desktop / Cursor / Claude Code)."
   echo "  2. Ask Claude: 'Use Quash and run the auth tool' to sign in."
   echo "  3. Ask Claude: 'Use Quash and run the build tool' to verify your setup."
   echo ""
