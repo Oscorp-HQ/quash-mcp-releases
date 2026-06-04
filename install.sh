@@ -76,21 +76,16 @@ if [ -n "$PY" ]; then
 fi
 if [ "$PY_OK" = "1" ]; then
   say "Setting up test-gen (Python venv) ..."
-  # fetch the wheel asset's download URL from the release (wheel name carries a version)
-  WHEEL_URL="$("$PY" - "$REPO" "$VERSION" <<'PYEOF'
-import json, sys, urllib.request
-repo, ver = sys.argv[1], sys.argv[2]
-u = f"https://api.github.com/repos/{repo}/releases/tags/{ver}"
-data = json.load(urllib.request.urlopen(u))
-for a in data.get("assets", []):
-    if a["name"].endswith(".whl"):
-        print(a["browser_download_url"]); break
-PYEOF
-)"
+  # Resolve the wheel asset's download URL via curl (NOT Python urllib — the
+  # system Python.framework often ships without a CA bundle, so urllib's TLS
+  # verify fails; curl uses the OS trust store and works). The wheel name
+  # carries a version, so we discover the URL from the release API.
+  WHEEL_URL="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/tags/$VERSION" \
+    | sed -n 's/.*"browser_download_url": *"\([^"]*\.whl\)".*/\1/p' | head -1)"
   if [ -n "$WHEEL_URL" ]; then
     fetch "$WHEEL_URL" "$QUASH_HOME/test-gen.whl"
     [ -d "$VENV" ] || "$PY" -m venv "$VENV"
-    "$VENV/bin/pip" install -q --upgrade pip
+    "$VENV/bin/pip" install -q --upgrade pip || say "  (pip self-upgrade skipped)"
     "$VENV/bin/pip" install -q "$QUASH_HOME/test-gen.whl" && rm -f "$QUASH_HOME/test-gen.whl"
     TEST_GEN_CMD="$VENV/bin/python -m test_gen_agent"
     say "test-gen ready."
