@@ -43,12 +43,24 @@ DL="https://github.com/$REPO/releases/download/$VERSION"
 mkdir -p "$BIN"
 fetch() { curl -fSL --progress-bar "$1" -o "$2" || die "download failed: $1"; }
 
-# ── 3. binaries (single-file) ────────────────────────────────────────────────
+# ── 3. binaries ──────────────────────────────────────────────────────────────
+# quash-mcp is a single-file binary (small, fast). quash-sidecar ships as an
+# onedir tarball (~479M of engine deps) extracted ONCE here, so it boots in
+# seconds on every run instead of re-extracting on each launch.
 say "Downloading quash-mcp ..."
 fetch "$DL/quash-mcp-$PLAT" "$BIN/quash-mcp"
+chmod +x "$BIN/quash-mcp"
+
 say "Downloading quash-sidecar ..."
-fetch "$DL/quash-sidecar-$PLAT" "$BIN/quash-sidecar"
-chmod +x "$BIN/quash-mcp" "$BIN/quash-sidecar"
+SIDECAR_DIR="$QUASH_HOME/sidecar"
+rm -rf "$SIDECAR_DIR"; mkdir -p "$SIDECAR_DIR"
+fetch "$DL/quash-sidecar-$PLAT.tar.gz" "$QUASH_HOME/sidecar.tar.gz"
+say "Extracting quash-sidecar ..."
+tar -xzf "$QUASH_HOME/sidecar.tar.gz" -C "$SIDECAR_DIR" || die "failed to extract sidecar"
+rm -f "$QUASH_HOME/sidecar.tar.gz"
+SIDECAR_BIN="$SIDECAR_DIR/quash-sidecar/quash-sidecar"
+[ -f "$SIDECAR_BIN" ] || die "sidecar binary not found at $SIDECAR_BIN after extract"
+chmod +x "$SIDECAR_BIN"
 
 # config (best-effort — sidecar falls back to its bundled config if absent)
 curl -fsSL "$DL/config.yaml" -o "$QUASH_HOME/config.yaml" 2>/dev/null || true
@@ -60,12 +72,22 @@ fi
 # Downloaded files are quarantined; strip it so they launch. (Proper public
 # distribution should ship Developer-ID-signed + NOTARIZED binaries instead.)
 if [ "$OS" = "Darwin" ]; then
-  xattr -dr com.apple.quarantine "$BIN/quash-mcp" "$BIN/quash-sidecar" 2>/dev/null || true
+  xattr -dr com.apple.quarantine "$BIN/quash-mcp" "$SIDECAR_DIR" 2>/dev/null || true
   command -v codesign >/dev/null 2>&1 && {
     codesign --force --sign - "$BIN/quash-mcp" 2>/dev/null || true
-    codesign --force --sign - "$BIN/quash-sidecar" 2>/dev/null || true
+    codesign --force --sign - "$SIDECAR_BIN" 2>/dev/null || true
   }
 fi
+
+# ── 4b. prime the engine (one-time) ──────────────────────────────────────────
+# macOS verifies a freshly-installed binary + ALL its bundled libs on first
+# launch (scanning ~120MB of code), which takes ~2 min — then caches the result
+# so every later launch is ~2-3s. Trigger that scan NOW so the user's first
+# `execute` is fast instead of mysteriously hanging for 2 minutes. Best-effort:
+# the engine prints `ready` then processes our shutdown and exits on its own.
+say "Priming the automation engine (one-time, ~1-2 min — please wait) ..."
+printf '{"type":"shutdown"}\n' | "$SIDECAR_BIN" >/dev/null 2>&1 || true
+say "Engine primed."
 
 # ── 5. test-gen venv (needs Python 3.11+) ────────────────────────────────────
 TEST_GEN_CMD=""
@@ -109,7 +131,7 @@ say "Registering MCP clients ..."
 register() {  # $1 = config file path
   cfg="$1"; dir="$(dirname "$cfg")"
   [ -d "$dir" ] || { printf '[quash]   %s — client dir not found, skipping.\n' "$cfg"; return; }
-  MCP_BIN="$BIN/quash-mcp" SIDECAR="$BIN/quash-sidecar" TGCMD="$TEST_GEN_CMD" \
+  MCP_BIN="$BIN/quash-mcp" SIDECAR="$SIDECAR_BIN" TGCMD="$TEST_GEN_CMD" \
   BACKEND="$BACKEND_URL" CFG="$cfg" "$PY" - <<'PYEOF' 2>/dev/null || printf '[quash]   %s — could not update.\n' "$cfg"
 import json, os, pathlib
 cfg = pathlib.Path(os.environ["CFG"])
