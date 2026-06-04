@@ -83,12 +83,19 @@ if [ "$PY_OK" = "1" ]; then
   WHEEL_URL="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/tags/$VERSION" \
     | sed -n 's/.*"browser_download_url": *"\([^"]*\.whl\)".*/\1/p' | head -1)"
   if [ -n "$WHEEL_URL" ]; then
-    fetch "$WHEEL_URL" "$QUASH_HOME/test-gen.whl"
+    # Keep the wheel's REAL filename — pip parses {name}-{ver}-{py}-{abi}-{plat}
+    # from it; a renamed file like 'test-gen.whl' is rejected as invalid.
+    WHEEL_FILE="$QUASH_HOME/$(basename "$WHEEL_URL")"
+    fetch "$WHEEL_URL" "$WHEEL_FILE"
     [ -d "$VENV" ] || "$PY" -m venv "$VENV"
     "$VENV/bin/pip" install -q --upgrade pip || say "  (pip self-upgrade skipped)"
-    "$VENV/bin/pip" install -q "$QUASH_HOME/test-gen.whl" && rm -f "$QUASH_HOME/test-gen.whl"
-    TEST_GEN_CMD="$VENV/bin/python -m test_gen_agent"
-    say "test-gen ready."
+    if "$VENV/bin/pip" install -q "$WHEEL_FILE"; then
+      TEST_GEN_CMD="$VENV/bin/python -m test_gen_agent"
+      say "test-gen ready."
+    else
+      say "WARN: test-gen install failed — test-case generation unavailable (execution still works)."
+    fi
+    rm -f "$WHEEL_FILE"
   else
     say "WARN: no test-gen wheel in this release — test-case generation will be unavailable."
   fi
