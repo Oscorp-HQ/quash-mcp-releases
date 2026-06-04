@@ -132,17 +132,26 @@ register() {  # $1 = config file path
   cfg="$1"; dir="$(dirname "$cfg")"
   [ -d "$dir" ] || { printf '[quash]   %s — client dir not found, skipping.\n' "$cfg"; return; }
   MCP_BIN="$BIN/quash-mcp" SIDECAR="$SIDECAR_BIN" TGCMD="$TEST_GEN_CMD" \
-  BACKEND="$BACKEND_URL" CFG="$cfg" "$PY" - <<'PYEOF' 2>/dev/null || printf '[quash]   %s — could not update.\n' "$cfg"
+  BACKEND="$BACKEND_URL" APITOKEN="${QUASH_API_TOKEN:-}" CFG="$cfg" "$PY" - <<'PYEOF' 2>/dev/null || printf '[quash]   %s — could not update.\n' "$cfg"
 import json, os, pathlib
 cfg = pathlib.Path(os.environ["CFG"])
 d = json.loads(cfg.read_text()) if cfg.exists() else {}
 servers = d.setdefault("mcpServers", {})
+# Preserve a token already present in this config (so re-running the installer
+# without QUASH_API_TOKEN doesn't wipe it).
+prev_env = (servers.get("quash") or {}).get("env") or {}
 env = {
     "QUASH_SIDECAR_CMD": os.environ["SIDECAR"],
     "QUASH_BACKEND_URL": os.environ["BACKEND"],
 }
 if os.environ.get("TGCMD"):
     env["QUASH_TEST_GEN_AGENT_CMD"] = os.environ["TGCMD"]
+# Standard local-stdio auth: the token lives in the client config env, and the
+# MCP self-authenticates from it on startup (no agent, no chat). Set it via:
+#   QUASH_API_TOKEN=qsh_... curl ... | sh
+token = os.environ.get("APITOKEN") or prev_env.get("QUASH_API_TOKEN")
+if token:
+    env["QUASH_API_TOKEN"] = token
 servers["quash"] = {"type": "stdio", "command": os.environ["MCP_BIN"], "env": env}
 cfg.parent.mkdir(parents=True, exist_ok=True)
 cfg.write_text(json.dumps(d, indent=2))
@@ -159,17 +168,27 @@ else
   say "WARN: python3 not found — installed binaries but could not auto-register MCP clients."
 fi
 
+TOKEN_NOTE="Not set — sign in with the auth tool, or re-run with QUASH_API_TOKEN=qsh_... to wire it in."
+[ -n "${QUASH_API_TOKEN:-}" ] && TOKEN_NOTE="Configured — the MCP signs in automatically on startup. No agent prompt needed."
+
 cat <<EOF
 
 [quash] Quash MCP installed to $BIN
 
+  Recommended (no agent needed for auth):
+    Generate a token in the Quash desktop app (Settings → MCP / API Token), then:
+      QUASH_API_TOKEN=qsh_... QUASH_BACKEND_URL=$BACKEND_URL \\
+        curl -fsSL <this-install-url> | sh
+    The token is stored in your client config's env; the MCP authenticates from it
+    on startup — the credential never passes through the agent or chat.
+
   Next steps:
   1. Restart your MCP client (Claude Desktop / Cursor / Claude Code).
-  2. Generate an MCP token in the Quash desktop app (Settings → MCP / API Token).
-  3. Ask Claude: 'Use Quash and run the auth tool with my token' to sign in.
-  4. Ask Claude: 'Use Quash and run the build tool' to verify your setup.
+  2. (If you didn't set QUASH_API_TOKEN) Ask the agent: 'Use Quash, run auth with my token'.
+  3. Ask the agent: 'Use Quash, run build' to verify your setup.
 
-  Backend: $BACKEND_URL  (override with QUASH_BACKEND_URL)
-  Update:  re-run this script.  Uninstall: rm -rf $QUASH_HOME and remove the
-           'quash' entry from your MCP client config.
+  API token: $TOKEN_NOTE
+  Backend:   $BACKEND_URL  (override with QUASH_BACKEND_URL)
+  Update:    re-run this script.  Uninstall: rm -rf $QUASH_HOME and remove the
+             'quash' entry from your MCP client config.
 EOF
