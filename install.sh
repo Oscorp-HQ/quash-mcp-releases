@@ -147,12 +147,22 @@ echo "$VERSION" > "$STAMP"   # stamp so a same-version re-run skips the above
 fi  # ── end idempotent-install guard ──
 
 # ── 6. register the MCP server in client configs ─────────────────────────────
+# Capture the Android SDK from THIS shell (which has the user's full env) so GUI
+# clients like Claude Desktop — spawned with a minimal PATH that lacks adb — can
+# still find it. Written as ANDROID_HOME in the server env; the MCP also resolves
+# it at runtime from standard locations as a fallback.
+ANDROID_HOME_DETECTED="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+if [ -z "$ANDROID_HOME_DETECTED" ] && [ -x "$HOME/Library/Android/sdk/platform-tools/adb" ]; then
+  ANDROID_HOME_DETECTED="$HOME/Library/Android/sdk"
+fi
+
 say "Registering MCP clients ..."
 register() {  # $1 = config file path
   cfg="$1"; dir="$(dirname "$cfg")"
   [ -d "$dir" ] || { printf '[quash]   %s — client dir not found, skipping.\n' "$cfg"; return; }
   MCP_BIN="$BIN/quash-mcp" SIDECAR="$SIDECAR_BIN" TGCMD="$TEST_GEN_CMD" \
-  BACKEND="$BACKEND_URL" APITOKEN="${QUASH_API_TOKEN:-}" CFG="$cfg" "$PY" - <<'PYEOF' 2>/dev/null || printf '[quash]   %s — could not update.\n' "$cfg"
+  BACKEND="$BACKEND_URL" APITOKEN="${QUASH_API_TOKEN:-}" ANDROID_HOME_DETECTED="$ANDROID_HOME_DETECTED" \
+  CFG="$cfg" "$PY" - <<'PYEOF' 2>/dev/null || printf '[quash]   %s — could not update.\n' "$cfg"
 import json, os, pathlib
 cfg = pathlib.Path(os.environ["CFG"])
 d = json.loads(cfg.read_text()) if cfg.exists() else {}
@@ -172,6 +182,10 @@ if os.environ.get("TGCMD"):
 token = os.environ.get("APITOKEN") or prev_env.get("QUASH_API_TOKEN")
 if token:
     env["QUASH_API_TOKEN"] = token
+# So GUI clients (Claude Desktop) can find adb despite their minimal PATH.
+android_home = os.environ.get("ANDROID_HOME_DETECTED") or prev_env.get("ANDROID_HOME")
+if android_home:
+    env["ANDROID_HOME"] = android_home
 servers["quash"] = {"type": "stdio", "command": os.environ["MCP_BIN"], "env": env}
 cfg.parent.mkdir(parents=True, exist_ok=True)
 cfg.write_text(json.dumps(d, indent=2))
