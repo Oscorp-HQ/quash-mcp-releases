@@ -1,6 +1,6 @@
 #!/bin/sh
 # Quash MCP installer — end users run:
-#   curl -fsSL https://raw.githubusercontent.com/Abhinav-Sai-Quash/quash-mcp-releases/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/Oscorp-HQ/quash-mcp-releases/main/install.sh | sh
 #
 # Installs three things to ~/.quash:
 #   bin/quash-mcp        single-file MCP server binary
@@ -11,7 +11,7 @@
 # Env overrides: QUASH_VERSION (default: latest), QUASH_BACKEND_URL (default: prod).
 set -eu
 
-REPO="Abhinav-Sai-Quash/quash-mcp-releases"
+REPO="Oscorp-HQ/quash-mcp-releases"
 QUASH_HOME="${QUASH_HOME:-$HOME/.quash}"
 BIN="$QUASH_HOME/bin"
 VENV="$QUASH_HOME/test-gen-venv"
