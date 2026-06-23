@@ -59,6 +59,13 @@ This installs the latest release into `~/.quash` (macOS) / `%USERPROFILE%\.quash
 (Windows) and **connects to Quash production automatically** — no backend URL to
 configure.
 
+> **Cursor users:** after running the installer above (needed for the engine), you can
+> one-click add the MCP server to Cursor:
+>
+> [![Add Quash to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=quash&config=eyJjb21tYW5kIjoiJHt1c2VySG9tZX0vLnF1YXNoL2Jpbi9xdWFzaC1tY3AiLCJlbnYiOnsiUVVBU0hfU0lERUNBUl9DTUQiOiIke3VzZXJIb21lfS8ucXVhc2gvc2lkZWNhci9xdWFzaC1zaWRlY2FyL3F1YXNoLXNpZGVjYXIiLCJRVUFTSF9URVNUX0dFTl9BR0VOVF9DTUQiOiIke3VzZXJIb21lfS8ucXVhc2gvdGVzdC1nZW4tdmVudi9iaW4vcHl0aG9uIC1tIHRlc3RfZ2VuX2FnZW50In19)
+>
+> (The installer already auto-registers Cursor, so this is only needed if you skipped that or removed the entry.)
+
 ### Options (env vars)
 
 > **macOS gotcha:** environment variables must go on the piped **`sh`**, *not* on
