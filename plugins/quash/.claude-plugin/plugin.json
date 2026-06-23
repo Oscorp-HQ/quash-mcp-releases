@@ -1,0 +1,10 @@
+{
+  "name": "quash",
+  "description": "Drive real Android & iOS mobile-app automation on a locally connected device from your AI agent: run natural-language test tasks, generate test cases, manage apps & builds, and pull back streamed runs & reports.",
+  "version": "1.1.0",
+  "author": { "name": "Quash", "email": "hello@quashbugs.com", "url": "https://quashbugs.com" },
+  "homepage": "https://quashbugs.com",
+  "repository": "https://github.com/Oscorp-HQ/quash-mcp-releases",
+  "license": "LicenseRef-Proprietary",
+  "keywords": ["mcp", "mobile-automation", "android", "ios", "testing", "qa"]
+}

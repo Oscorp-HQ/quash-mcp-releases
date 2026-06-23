@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "quashbugs",
+  "owner": {
+    "name": "Quash",
+    "email": "hello@quashbugs.com"
+  },
+  "metadata": {
+    "description": "Quash — mobile app automation for AI agents.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "quash",
+      "source": "./plugins/quash",
+      "description": "Drive real Android & iOS mobile-app automation on a locally connected device: run natural-language test tasks, generate test cases, manage builds, and pull back streamed runs & reports.",
+      "version": "1.1.0",
+      "author": { "name": "Quash", "email": "hello@quashbugs.com" },
+      "homepage": "https://quashbugs.com"
+    }
+  ]
+}
