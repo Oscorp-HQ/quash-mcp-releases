@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "quash": {
+      "command": "${userHome}/.quash/bin/quash-mcp",
+      "env": {
+        "QUASH_SIDECAR_CMD": "${userHome}/.quash/sidecar/quash-sidecar/quash-sidecar",
+        "QUASH_TEST_GEN_AGENT_CMD": "${userHome}/.quash/test-gen-venv/bin/python -m test_gen_agent"
+      }
+    }
+  }
+}
