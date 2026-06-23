@@ -1,0 +1,14 @@
+{
+  "name": "quash",
+  "version": "1.1.0",
+  "description": "Drive real Android & iOS mobile-app automation on a locally connected device — generate test cases, run them in natural language, manage apps & builds, and pull back streamed, shareable test reports. Requires the Quash installer (engine) and a Quash account.",
+  "mcpServers": {
+    "quash": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "QUASH_SIDECAR_CMD=\"$HOME/.quash/sidecar/quash-sidecar/quash-sidecar\" QUASH_TEST_GEN_AGENT_CMD=\"$HOME/.quash/test-gen-venv/bin/python -m test_gen_agent\" exec \"$HOME/.quash/bin/quash-mcp\""
+      ]
+    }
+  }
+}
