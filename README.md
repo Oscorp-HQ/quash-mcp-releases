@@ -163,6 +163,49 @@ Config file locations: Claude Code → `~/.claude.json` (macOS) /
 
 After editing config, **restart the agent** (or `/mcp` → reconnect in Claude Code).
 
+### JetBrains IDEs (IntelliJ IDEA, PyCharm)
+
+JetBrains AI Assistant supports MCP over stdio. After running the installer (step 2):
+
+1. Open **Settings → Tools → AI Assistant → Model Context Protocol (MCP)**.
+2. **Easiest:** click **Import from Claude** — since the installer already registered Quash
+   in Claude Desktop, the `quash` server is pulled in automatically.
+3. **Or add manually:** click **Add**, then paste this JSON (JetBrains does *not* expand
+   environment variables, so use absolute paths — replace `<you>` with your username):
+
+   **macOS**
+   ```jsonc
+   {
+     "mcpServers": {
+       "quash": {
+         "command": "/Users/<you>/.quash/bin/quash-mcp",
+         "env": {
+           "QUASH_SIDECAR_CMD": "/Users/<you>/.quash/sidecar/quash-sidecar/quash-sidecar",
+           "QUASH_TEST_GEN_AGENT_CMD": "/Users/<you>/.quash/test-gen-venv/bin/python -m test_gen_agent"
+         }
+       }
+     }
+   }
+   ```
+   **Windows**
+   ```jsonc
+   {
+     "mcpServers": {
+       "quash": {
+         "command": "C:\\Users\\<you>\\.quash\\bin\\quash-mcp\\quash-mcp.exe",
+         "env": {
+           "QUASH_SIDECAR_CMD": "C:\\Users\\<you>\\.quash\\sidecar\\quash-sidecar\\quash-sidecar.exe",
+           "QUASH_TEST_GEN_AGENT_CMD": "C:\\Users\\<you>\\.quash\\test-gen-venv\\Scripts\\python.exe -m test_gen_agent"
+         }
+       }
+     }
+   }
+   ```
+4. Click **OK → Apply** to start the server.
+
+> **Android Studio:** its agent (Gemini Agent Mode) currently supports MCP over **HTTP/Streamable
+> only**, not stdio, so the config above does not apply there yet.
+
 ---
 
 ## 5. Authenticate
